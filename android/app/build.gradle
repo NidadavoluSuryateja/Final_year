@@ -84,6 +84,12 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        
+        // Load environment variables from .env file for Firebase configuration
+        project.ext.envConfigFiles = [
+            debug: ".env",
+            release: ".env",
+        ]
     }
     signingConfigs {
         debug {
