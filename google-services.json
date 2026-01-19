@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "284560558108",
+    "project_id": "arcampusnavigator-986c9",
+    "storage_bucket": "arcampusnavigator-986c9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:284560558108:android:a3bf88bec2949e1f06f7d9",
+        "android_client_info": {
+          "package_name": "com.arcampusnavigator"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtjuZtD3CyLgB03TwmDTv9mkHTlTSX5WQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:284560558108:android:a3bf88bec2949e1f06f7d9",
+        "android_client_info": {
+          "package_name": "ar.navigator"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtjuZtD3CyLgB03TwmDTv9mkHTlTSX5WQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:284560558108:android:283d3810f7014cff06f7d9",
+        "android_client_info": {
+          "package_name": "com.project.arcampus"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtjuZtD3CyLgB03TwmDTv9mkHTlTSX5WQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

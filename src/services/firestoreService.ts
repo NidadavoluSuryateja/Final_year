@@ -50,6 +50,7 @@ const convertFirestoreGeoPoint = (
 
 /**
  * Transform raw Firestore document to Building interface
+ * Matches actual document structure from Firestore
  */
 const transformBuilding = (
   doc: FirebaseFirestoreTypes.DocumentSnapshot
@@ -58,17 +59,30 @@ const transformBuilding = (
   if (!data) return null;
 
   try {
+    // Transform entrances array
+    const entrances = Array.isArray(data.entrances)
+      ? data.entrances.map((entrance: any) => ({
+          entrance_id: entrance.entrance_id || '',
+          name: entrance.name || '',
+          latitude: entrance.latitude || 0,
+          longitude: entrance.longitude || 0,
+          floors: entrance.floors,
+        }))
+      : [];
+
     const building: Building = {
-      id: doc.id,
-      name: data.name || '',
-      description: data.description || '',
-      location: convertFirestoreGeoPoint(data.location),
-      floors: data.floors || 1,
-      imageUrl: data.imageUrl,
-      code: data.code,
+      building_id: data.building_id || doc.id,
+      category: data.category || '',
+      entrances,
+      gps: {
+        latitude: data.gps?.latitude || 0,
+        longitude: data.gps?.longitude || 0,
+        name: data.gps?.name,
+      },
+      name: data.name,
+      description: data.description,
       facilities: Array.isArray(data.facilities) ? data.facilities : [],
-      createdAt: convertFirestoreTimestamp(data.createdAt),
-      updatedAt: convertFirestoreTimestamp(data.updatedAt),
+      floors: data.floors,
     };
 
     return isBuilding(building) ? building : null;
@@ -153,12 +167,15 @@ const transformPathNode = (
  */
 export const getBuildings = async (): Promise<Building[]> => {
   try {
+    console.log('📚 Fetching buildings from Firestore...');
+    
     const snapshot = await firestore()
       .collection(BUILDINGS_COLLECTION)
       .get();
 
     if (snapshot.empty) {
-      console.warn('No buildings found in Firestore');
+      console.warn('⚠️  No buildings found in Firestore');
+      console.warn('   Please add building documents to the buildings collection');
       return [];
     }
 
@@ -170,9 +187,21 @@ export const getBuildings = async (): Promise<Building[]> => {
       }
     });
 
+    console.log(`✅ Successfully fetched ${buildings.length} buildings`);
     return buildings;
   } catch (error) {
-    console.error('Error fetching buildings:', error);
+    console.error('❌ Error fetching buildings:', error);
+    
+    // Check if Firebase is initialized
+    if ((error as any)?.message?.includes('Firebase App')) {
+      console.error('   Firebase not initialized. Please check Firebase configuration.');
+      console.error('   Ensure .env file contains all Firebase credentials.');
+    }
+    
+    if ((error as any)?.message?.includes('apiKey')) {
+      console.error('   Missing or invalid Firebase apiKey in .env file.');
+    }
+    
     return [];
   }
 };

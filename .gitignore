@@ -28,6 +28,11 @@ build/
 .idea
 .gradle
 local.properties
+
+# Environment variables - DO NOT COMMIT
+.env
+.env.local
+.env.*.local
 *.iml
 *.hprof
 .cxx/

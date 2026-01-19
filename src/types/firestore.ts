@@ -12,19 +12,38 @@ export interface GeoPoint {
 }
 
 /**
+ * Building entrance/exit information
+ */
+export interface BuildingEntrance {
+  entrance_id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  floors?: number;
+}
+
+/**
+ * GPS coordinates for a building
+ */
+export interface BuildingGPS {
+  latitude: number;
+  longitude: number;
+  name?: string;
+}
+
+/**
  * Building entity representing a physical structure on campus
+ * Matches actual Firestore document structure
  */
 export interface Building {
-  id: string;
-  name: string;
-  description: string;
-  location: GeoPoint;
-  floors: number;
-  imageUrl?: string;
-  code?: string; // Building code (e.g., "CS" for Computer Science)
-  facilities?: string[]; // e.g., ["cafeteria", "restroom", "library"]
-  createdAt: Date;
-  updatedAt: Date;
+  building_id: string;
+  category: string; // e.g., "Entrance/Exit"
+  entrances: BuildingEntrance[]; // Array of entrance points
+  gps: BuildingGPS; // Main building GPS coordinates
+  name?: string;
+  description?: string;
+  facilities?: string[];
+  floors?: number;
 }
 
 /**
@@ -99,11 +118,12 @@ export interface PathNode {
 export const isBuilding = (obj: any): obj is Building => {
   return (
     typeof obj === 'object' &&
-    typeof obj.id === 'string' &&
-    typeof obj.name === 'string' &&
-    typeof obj.location === 'object' &&
-    typeof obj.location.latitude === 'number' &&
-    typeof obj.location.longitude === 'number'
+    typeof obj.building_id === 'string' &&
+    typeof obj.category === 'string' &&
+    Array.isArray(obj.entrances) &&
+    typeof obj.gps === 'object' &&
+    typeof obj.gps.latitude === 'number' &&
+    typeof obj.gps.longitude === 'number'
   );
 };
 

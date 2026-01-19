@@ -1,76 +1,66 @@
 /**
  * Firebase Configuration and Initialization
- * Initialize Firebase on app startup
+ * React Native Firebase Configuration
+ * 
+ * IMPORTANT: In React Native Firebase, the native Android module automatically
+ * initializes Firebase when the app starts by reading google-services.json.
+ * We do NOT call initializeApp() manually - that's a Web SDK pattern.
+ * 
+ * Instead, we:
+ * 1. Import firestore() - returns the already-initialized default instance
+ * 2. Import getApp() - for verification only, not initialization
+ * 3. Configure settings if needed
+ * 
+ * The native Firebase SDK handles all initialization automatically via google-services.json
  */
 
-import { initializeApp, getApp } from '@react-native-firebase/app';
-import { initializeFirestore, getFirestore } from '@react-native-firebase/firestore';
-import Config from 'react-native-config';
+import firestore from '@react-native-firebase/firestore';
+
+let firebaseReady = false;
 
 /**
- * Firebase configuration object
- * Uses environment variables for flexibility
- */
-const firebaseConfig = {
-  apiKey: Config.FIREBASE_API_KEY || '',
-  authDomain: Config.FIREBASE_AUTH_DOMAIN || '',
-  projectId: Config.FIREBASE_PROJECT_ID || '',
-  storageBucket: Config.FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: Config.FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: Config.FIREBASE_APP_ID || '',
-};
-
-/**
- * Initialize Firebase with configuration
- * Supports both google-services.json (Android) and environment variables
+ * Initialize Firestore settings and verify Firebase is ready
+ * Firebase app is auto-initialized by React Native Firebase native module
  */
 export const initializeFirebase = () => {
   try {
-    let app;
-    
-    // Try to get existing app first
-    try {
-      app = getApp();
-      console.log('Using existing Firebase app instance');
-    } catch (e) {
-      // App not initialized, initialize with config
-      if (firebaseConfig.apiKey && firebaseConfig.projectId) {
-        app = initializeApp(firebaseConfig);
-        console.log('Firebase initialized with environment configuration');
-      } else {
-        // Fallback to default initialization (uses google-services.json on Android)
-        app = initializeApp();
-        console.log('Firebase initialized with default configuration (google-services.json)');
-      }
+    if (firebaseReady) {
+      console.log('✅ Firebase already initialized');
+      return { firestore: firestore() };
     }
+
+    console.log('🔄 Configuring Firestore...');
     
-    // Initialize Firestore with app
-    let firestore;
+    // Get the auto-initialized Firestore instance
+    // No initializeApp() needed - React Native Firebase native module handles it
+    const db = firestore();
+    
+    // Configure Firestore settings for optimal performance
     try {
-      firestore = getFirestore(app);
-    } catch {
-      firestore = initializeFirestore(app, {
-        experimentalForceLongPolling: true, // Use long polling for better reliability
+      db.settings({
+        persistence: true,
+        experimentalForceLongPolling: true,
       });
+      console.log('✅ Firestore settings configured');
+    } catch (settingsError) {
+      console.warn('⚠️ Firestore settings error (non-critical):', settingsError);
     }
     
-    console.log('✅ Firebase and Firestore initialized successfully');
-    console.log(`📍 Project ID: ${firebaseConfig.projectId}`);
-    return { app, firestore };
+    firebaseReady = true;
+    console.log('✅ Firestore ready for queries');
+    
+    return { firestore: db };
   } catch (error) {
-    console.error('❌ Firebase initialization error:', error);
+    console.error('❌ Firestore configuration failed:', error);
+    console.error('   Ensure google-services.json is in android/app/');
+    console.error('   And that @react-native-firebase modules are properly installed');
     return null;
   }
 };
 
 /**
- * Check if Firebase is properly configured
+ * Check if Firestore is ready
  */
 export const isFirebaseConfigured = (): boolean => {
-  try {
-    getApp();
-    return true;
-  } catch (error) {
-    return false;
-  }
-};
+  return firebaseReady;
+}

@@ -55,6 +55,35 @@ react {
 }
 
 /**
+ * Load environment variables from .env file for react-native-config
+ */
+def loadEnvFile() {
+    def envFiles = [
+        ".env.local",
+        ".env"
+    ]
+    
+    for (envFile in envFiles) {
+        def file = file(envFile)
+        if (file.exists()) {
+            println("✓ Loading environment from: $envFile")
+            file.readLines().each { line ->
+                if (line && !line.startsWith('#')) {
+                    def (key, value) = line.split('=', 2)
+                    if (key && value) {
+                        project.ext[key.trim()] = value.trim()
+                    }
+                }
+            }
+            return
+        }
+    }
+    println("⚠ No .env or .env.local file found")
+}
+
+loadEnvFile()
+
+/**
  * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
  */
 def enableProguardInReleaseBuilds = false

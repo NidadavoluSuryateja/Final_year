@@ -16,13 +16,9 @@ import {
 } from 'react-native';
 import { Building } from '../types/firestore';
 import { getBuildings } from '../services/firestoreService';
-import type { ScreenProps, RootStackParamList } from '../types/navigation';
+import type { ScreenProps } from '../types/navigation';
 
 type DestinationSelectionScreenProps = ScreenProps<'DestinationSelection'>;
-
-interface BuildingItem extends Building {
-  category?: string;
-}
 
 /**
  * Screen for selecting a destination building
@@ -30,7 +26,7 @@ interface BuildingItem extends Building {
 const DestinationSelectionScreen: React.FC<DestinationSelectionScreenProps> = ({
   navigation,
 }) => {
-  const [buildings, setBuildings] = useState<BuildingItem[]>([]);
+  const [buildings, setBuildings] = useState<Building[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,12 +42,7 @@ const DestinationSelectionScreen: React.FC<DestinationSelectionScreenProps> = ({
           setError('No buildings found. Please check your data.');
           setBuildings([]);
         } else {
-          // Add category based on building code or name
-          const buildingsWithCategory = fetchedBuildings.map((building) => ({
-            ...building,
-            category: building.code || building.name.split(' ')[0],
-          }));
-          setBuildings(buildingsWithCategory);
+          setBuildings(fetchedBuildings);
         }
       } catch (err) {
         const errorMessage =
@@ -70,20 +61,24 @@ const DestinationSelectionScreen: React.FC<DestinationSelectionScreenProps> = ({
    * Handle building selection and navigation
    */
   const handleSelectBuilding = useCallback(
-    (building: BuildingItem) => {
-      if (!building.id || !building.location) {
+    (building: Building) => {
+      if (!building.building_id || !building.gps) {
         Alert.alert('Invalid Building', 'This building has missing location data');
         return;
       }
 
+      // Get the main entrance or use GPS coordinates
+      const mainEntrance = building.entrances[0];
+      const coordinates = {
+        latitude: mainEntrance?.latitude || building.gps.latitude,
+        longitude: mainEntrance?.longitude || building.gps.longitude,
+      };
+
       // Navigate to NavigationScreen with building info
       navigation.navigate('Navigation', {
-        buildingId: building.id,
-        buildingName: building.name,
-        coordinates: {
-          latitude: building.location.latitude,
-          longitude: building.location.longitude,
-        },
+        buildingId: building.building_id,
+        buildingName: building.name || building.category || 'Destination',
+        coordinates,
       });
     },
     [navigation]
@@ -92,25 +87,28 @@ const DestinationSelectionScreen: React.FC<DestinationSelectionScreenProps> = ({
   /**
    * Render individual building item
    */
-  const renderBuildingItem = ({ item }: { item: BuildingItem }) => (
+  const renderBuildingItem = ({ item }: { item: Building }) => (
     <TouchableOpacity
       style={styles.buildingCard}
       onPress={() => handleSelectBuilding(item)}
       activeOpacity={0.7}
     >
       <View style={styles.cardContent}>
-        <View style={styles.categoryBadge}>
-          <Text style={styles.categoryText}>{item.category}</Text>
-        </View>
+        {item.category && (
+          <View style={styles.categoryBadge}>
+            <Text style={styles.categoryText}>{item.category}</Text>
+          </View>
+        )}
         <Text style={styles.buildingName} numberOfLines={2}>
-          {item.name}
+          {item.name || 'Building'}
         </Text>
-        <Text style={styles.buildingDescription} numberOfLines={2}>
-          {item.description || 'No description available'}
+        <Text style={styles.buildingDescription} numberOfLines={1}>
+          {item.entrances.length} entrance{item.entrances.length !== 1 ? 's' : ''}
+          {item.floors ? ` • ${item.floors} floors` : ''}
         </Text>
         {item.facilities && item.facilities.length > 0 && (
           <Text style={styles.facilities}>
-            {item.facilities.join(', ')}
+            {item.facilities.slice(0, 3).join(', ')}
           </Text>
         )}
       </View>
@@ -139,13 +137,7 @@ const DestinationSelectionScreen: React.FC<DestinationSelectionScreenProps> = ({
                 if (fetchedBuildings.length === 0) {
                   setError('No buildings found.');
                 } else {
-                  const buildingsWithCategory = fetchedBuildings.map(
-                    (building) => ({
-                      ...building,
-                      category: building.code || building.name.split(' ')[0],
-                    })
-                  );
-                  setBuildings(buildingsWithCategory);
+                  setBuildings(fetchedBuildings);
                   setError(null);
                 }
               })
@@ -181,7 +173,7 @@ const DestinationSelectionScreen: React.FC<DestinationSelectionScreenProps> = ({
         <FlatList
           data={buildings}
           renderItem={renderBuildingItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.building_id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={true}
         />
