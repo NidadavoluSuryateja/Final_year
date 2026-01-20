@@ -3,7 +3,7 @@
  * Handles route resolution and navigation logic
  */
 
-import { getRoutes, getBuildings } from './firestoreService';
+import { getRoutes } from './firestoreService';
 import { Route } from '../types/firestore';
 
 /**
@@ -18,9 +18,9 @@ export interface UserLocation {
  * Calculate distance between two coordinates using Haversine formula
  * Returns distance in kilometers
  */
-const calculateDistance = (
+export const calculateDistance = (
   coord1: UserLocation,
-  coord2: UserLocation
+  coord2: UserLocation,
 ): number => {
   const R = 6371; // Earth's radius in kilometers
   const dLat = ((coord2.latitude - coord1.latitude) * Math.PI) / 180;
@@ -59,7 +59,7 @@ const calculateDistance = (
 export const resolveRoute = async (
   userLocation: UserLocation,
   selectedBuildingId: string,
-  preferShortestTime: boolean = true
+  preferShortestTime: boolean = true,
 ): Promise<string | null> => {
   if (!userLocation || !selectedBuildingId) {
     console.warn('Invalid parameters for resolveRoute');
@@ -77,13 +77,11 @@ export const resolveRoute = async (
 
     // Filter routes that end at the selected building
     const matchingRoutes = allRoutes.filter(
-      (route) => route.endBuilding === selectedBuildingId
+      route => route.endBuilding === selectedBuildingId,
     );
 
     if (matchingRoutes.length === 0) {
-      console.warn(
-        `No routes found ending at building ${selectedBuildingId}`
-      );
+      console.warn(`No routes found ending at building ${selectedBuildingId}`);
       return null;
     }
 
@@ -94,7 +92,7 @@ export const resolveRoute = async (
     }
 
     // Multiple routes exist - select the best one
-    const routeScores = matchingRoutes.map((route) => {
+    const routeScores = matchingRoutes.map(route => {
       let score = 0;
 
       // Calculate distance from user to route start
@@ -143,7 +141,11 @@ export const resolveRoute = async (
     if (sortedRoutes.length > 0) {
       const selectedRoute = sortedRoutes[0];
       console.log(
-        `Selected best route: ${selectedRoute.route.id} (score: ${selectedRoute.score.toFixed(2)}, time: ${selectedRoute.estimatedTime}s, distance: ${selectedRoute.distance}m)`
+        `Selected best route: ${
+          selectedRoute.route.id
+        } (score: ${selectedRoute.score.toFixed(2)}, time: ${
+          selectedRoute.estimatedTime
+        }s, distance: ${selectedRoute.distance}m)`,
       );
       return selectedRoute.route.id;
     }
@@ -170,7 +172,7 @@ export const getRouteInfo = async (routeId: string): Promise<Route | null> => {
 
   try {
     const allRoutes = await getRoutes();
-    const route = allRoutes.find((r) => r.id === routeId);
+    const route = allRoutes.find(r => r.id === routeId);
 
     if (!route) {
       console.warn(`Route ${routeId} not found`);
@@ -194,7 +196,7 @@ export const getRouteInfo = async (routeId: string): Promise<Route | null> => {
  */
 export const getAlternativeRoutes = async (
   selectedBuildingId: string,
-  limit: number = 3
+  limit: number = 3,
 ): Promise<Route[]> => {
   if (!selectedBuildingId) {
     console.warn('Invalid buildingId provided to getAlternativeRoutes');
@@ -204,13 +206,13 @@ export const getAlternativeRoutes = async (
   try {
     const allRoutes = await getRoutes();
     const matchingRoutes = allRoutes
-      .filter((route) => route.endBuilding === selectedBuildingId)
+      .filter(route => route.endBuilding === selectedBuildingId)
       .sort((a, b) => a.estimatedTime - b.estimatedTime)
       .slice(0, limit);
 
     if (matchingRoutes.length === 0) {
       console.warn(
-        `No alternative routes found for building ${selectedBuildingId}`
+        `No alternative routes found for building ${selectedBuildingId}`,
       );
       return [];
     }

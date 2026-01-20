@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { useRoutePath } from '../hooks/useRoutePath';
 import { useNavigationEngine } from '../hooks/useNavigationEngine';
-import type { ScreenProps, RootStackParamList } from '../types/navigation';
+import type { ScreenProps } from '../types/navigation';
 
 type NavigationScreenProps = ScreenProps<'Navigation'>;
 
@@ -28,17 +28,21 @@ const NavigationScreen: React.FC<NavigationScreenProps> = ({
   route,
   navigation,
 }) => {
-  const { buildingId, buildingName, coordinates } = route.params;
+  const { buildingId, buildingName } = route.params;
   const [navigationActive, setNavigationActive] = useState(true);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [showFinalArrivalModal, setShowFinalArrivalModal] = useState(false);
-  const [hasTriggeredFinalArrival, setHasTriggeredFinalArrival] = useState(false);
+  const [hasTriggeredFinalArrival, setHasTriggeredFinalArrival] =
+    useState(false);
 
   // Fetch route path nodes
   // Note: In a real app, we would resolve the route first using navigationService.resolveRoute()
   // For now, we'll use the buildingId as a placeholder routeId
-  const { coordinates: pathCoordinates, loading: pathLoading, error: pathError } =
-    useRoutePath(buildingId);
+  const {
+    coordinates: pathCoordinates,
+    loading: pathLoading,
+    error: pathError,
+  } = useRoutePath(buildingId);
 
   // Get navigation engine output
   const navigationEngine = useNavigationEngine(
@@ -57,25 +61,35 @@ const NavigationScreen: React.FC<NavigationScreenProps> = ({
       createdAt: new Date(),
       updatedAt: new Date(),
     })),
-    navigationActive && permissionGranted
+    navigationActive && permissionGranted,
   );
 
   /**
    * Request location permission on mount
    */
   useEffect(() => {
-    const requestLocationPermission = async () => {
+    const requestPermissions = async () => {
       try {
-        const permission = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
-        );
-        if (permission === PermissionsAndroid.RESULTS.GRANTED) {
+        const results = await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+        ]);
+
+        const grantedLocation =
+          results[PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION] ===
+          PermissionsAndroid.RESULTS.GRANTED;
+        const grantedCamera =
+          results[PermissionsAndroid.PERMISSIONS.CAMERA] ===
+          PermissionsAndroid.RESULTS.GRANTED;
+
+        if (grantedLocation && grantedCamera) {
           setPermissionGranted(true);
         } else {
           Alert.alert(
-            'Permission Denied',
-            'Location permission is required for navigation'
+            'Permissions Required',
+            'Location and Camera permissions are required for navigation features',
           );
+          setPermissionGranted(false);
         }
       } catch (err) {
         console.error('Permission request error:', err);
@@ -83,7 +97,7 @@ const NavigationScreen: React.FC<NavigationScreenProps> = ({
       }
     };
 
-    requestLocationPermission();
+    requestPermissions();
   }, []);
 
   /**
@@ -91,12 +105,16 @@ const NavigationScreen: React.FC<NavigationScreenProps> = ({
    */
   useEffect(() => {
     if (navigationEngine.arriveAtDestination) {
-      Alert.alert('Destination Reached', `You have arrived at ${buildingName}`, [
-        {
-          text: 'Done',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
+      Alert.alert(
+        'Destination Reached',
+        `You have arrived at ${buildingName}`,
+        [
+          {
+            text: 'Done',
+            onPress: () => navigation.goBack(),
+          },
+        ],
+      );
       setNavigationActive(false);
     }
   }, [navigationEngine.arriveAtDestination, buildingName, navigation]);
@@ -130,10 +148,10 @@ const NavigationScreen: React.FC<NavigationScreenProps> = ({
    */
   const handleEnterBuilding = () => {
     setShowFinalArrivalModal(false);
-    
+
     // Trigger indoor navigation callback
     console.log(`Entering building: ${buildingName} (${buildingId})`);
-    
+
     // In a real app, this would trigger indoor navigation
     // For now, show an alert and navigate back
     Alert.alert(
@@ -144,7 +162,7 @@ const NavigationScreen: React.FC<NavigationScreenProps> = ({
           text: 'Done',
           onPress: () => navigation.goBack(),
         },
-      ]
+      ],
     );
   };
 
@@ -199,9 +217,7 @@ const NavigationScreen: React.FC<NavigationScreenProps> = ({
       {/* Camera View Placeholder */}
       <View style={styles.cameraViewContainer}>
         <View style={styles.cameraPlaceholder}>
-          <Text style={styles.cameraPlaceholderText}>
-            📷 Camera View
-          </Text>
+          <Text style={styles.cameraPlaceholderText}>📷 Camera View</Text>
           <Text style={styles.cameraPlaceholderSubtext}>
             (AR would render here)
           </Text>
@@ -217,8 +233,7 @@ const NavigationScreen: React.FC<NavigationScreenProps> = ({
         <View
           style={[
             styles.infoPanel,
-            navigationEngine.arriveAtDestination &&
-              styles.infoPanelArrived,
+            navigationEngine.arriveAtDestination && styles.infoPanelArrived,
           ]}
         >
           {/* Distance Display */}
@@ -233,10 +248,7 @@ const NavigationScreen: React.FC<NavigationScreenProps> = ({
 
           {/* Movement Instruction */}
           <View style={styles.instructionContainer}>
-            <Text
-              style={styles.instructionText}
-              numberOfLines={3}
-            >
+            <Text style={styles.instructionText} numberOfLines={3}>
               {navigationEngine.movementInstruction}
             </Text>
           </View>
@@ -388,12 +400,7 @@ const ArrowOverlay: React.FC<ArrowOverlayProps> = ({
           },
         ]}
       >
-        <Text
-          style={[
-            styles.arrow,
-            isArrivingAtNode && styles.arrowArrived,
-          ]}
-        >
+        <Text style={[styles.arrow, isArrivingAtNode && styles.arrowArrived]}>
           ↑
         </Text>
       </Animated.View>
