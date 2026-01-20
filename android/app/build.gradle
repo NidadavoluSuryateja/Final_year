@@ -113,7 +113,11 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
-        
+        // When libraries declare productFlavors (e.g. react-native-camera has
+        // flavors 'general' and 'mlkit') Gradle needs a missingDimensionStrategy
+        // so the app can pick a default flavor. Set to 'general' to avoid MLKit.
+        missingDimensionStrategy 'react-native-camera', 'general'
+
         // Load environment variables from .env file for Firebase configuration
         project.ext.envConfigFiles = [
             debug: ".env",
@@ -151,4 +155,16 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // ✅ Add Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
+
+    // ✅ Add Firebase SDKs you need
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    // etc
 }
+
+// Apply Google services plugin to read android/app/google-services.json
+apply plugin: 'com.google.gms.google-services'

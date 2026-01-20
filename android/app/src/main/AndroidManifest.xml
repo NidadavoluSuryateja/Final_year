@@ -1,6 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Declare camera as optional feature so app can install on devices without a camera -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
       android:name=".MainApplication"
